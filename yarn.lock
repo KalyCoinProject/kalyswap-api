@@ -683,10 +683,10 @@
   dependencies:
     hardhat-tracer "^1.0.0-alpha.5"
 
-"@kalycoinproject/sdk@2.1.12":
-  version "2.1.12"
-  resolved "https://registry.yarnpkg.com/@kalycoinproject/sdk/-/sdk-2.1.12.tgz#61ee968ce6ec2a047a00c73e73dadef9f642172a"
-  integrity sha512-44DirVLztFBiYozsO/LWxoNFkI+RQ3okSOV9ODCpGkqTroLIoQrHsp/1Y5k5aGRITqrKlwbzMpDEHn22UsoqXg==
+"@kalycoinproject/sdk@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@kalycoinproject/sdk/-/sdk-2.2.0.tgz#4d66082fedfb420801e9c90084c967dcb7e96f35"
+  integrity sha512-HVFrkFQy0R3gObpCaI7eY2TWZFLNNCll6HEtLTnTLdFKrOdS2HwuPrSeH9l7O0X/vcndJok3PUcwjg5Tv/gryQ==
   dependencies:
     "@kalycoinproject/exchange-contracts" "2.0.3"
     big.js "^5.2.2"
