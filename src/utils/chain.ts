@@ -1,0 +1,56 @@
+import {Chain, ChainId, CHAINS} from '@kalycoinproject/sdk';
+
+export interface ChainInfo {
+  chainId: string;
+  kswap: string;
+  wrapped_native_token: string;
+  mini_chef: string;
+  factory: string;
+  community_treasury: string;
+  treasury_vester: string;
+  rpc: string;
+  subgraph_exchange?: string;
+}
+
+export function getChainInfo(chainString: string | undefined): ChainInfo {
+  if (chainString === undefined) chainString = ChainId.KALYCHAIN.toString();
+
+  let chainId: ChainId;
+
+  if (chainString in ChainId) {
+    chainId = Number(chainString);
+  } else {
+    throw new Error(`Chain ${chainString} is not yet supported`);
+  }
+
+  const chain: Chain = CHAINS[chainId];
+
+  if (!chain.kalyswap_is_live) {
+    throw new Error(`Kalyswap is not live on chain ${chainString}`);
+  }
+
+  const EMPTY = '';
+
+  const chainInfo = {
+    chainId: chain.chain_id?.toString() ?? EMPTY,
+    kswap: chain.contracts?.kswap ?? EMPTY,
+    wrapped_native_token: chain.contracts?.wrapped_native_token ?? EMPTY,
+    mini_chef: chain.contracts?.mini_chef ?? EMPTY,
+    factory: chain.contracts?.factory ?? EMPTY,
+
+    community_treasury: chain.contracts?.community_treasury ?? EMPTY,
+    treasury_vester: chain.contracts?.treasury_vester ?? EMPTY,
+
+    rpc: chain.rpc_uri,
+    subgraph_exchange: chain.subgraph?.exchange ?? undefined,
+  };
+
+  const missingInfos = Object.entries(chainInfo).filter(([, v]) => v === EMPTY);
+
+  if (missingInfos.length > 0) {
+    const missingKeys = missingInfos.map(([k]) => k);
+    throw new Error(`Missing chain info properties (${missingKeys.join(',')})`);
+  }
+
+  return chainInfo;
+}
