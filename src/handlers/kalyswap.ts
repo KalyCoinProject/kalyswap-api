@@ -18,7 +18,7 @@ import {
 import {ChainInfo, getChainInfo} from '../utils/chain';
 import {convertStringToBigNumber, expandTo18Decimals} from '../utils/conversion';
 import * as gql from '../utils/gql';
-import {getETHPrice, getPairPriceUSD, getTokenInfo, getTokenPriceETH} from '../utils/gql';
+import {getKLCPrice, getPairPriceUSD, getTokenInfo, getTokenPriceKLC} from '../utils/gql';
 import * as QUERIES from '../utils/queries';
 import {AprResponse, PoolInfo} from '../utils/interfaces';
 
@@ -113,13 +113,13 @@ export const aprChef: Handler = async (_, context) => {
   const isActiveChef: boolean = totalAllocPoints.gt(ZERO) && rewardPerSecond.gt(ZERO);
   const isActiveFarm: boolean = isActiveChef && farmAllocPoints.gt(ZERO);
 
-  const [_klcPrice, _derivedKswap, pairValueUSD, rewarderAddress, pglTotalSupply, pglStaked] =
+  const [_klcPrice, _derivedKswap, pairValueUSD, rewarderAddress, kslTotalSupply, kslStaked] =
     await Promise.all<string, string, string, string, BigNumber, BigNumber>([
       // Variable: _klcPrice
-      isActiveFarm ? getETHPrice(chainInfo.subgraph_exchange) : '0',
+      isActiveFarm ? getKLCPrice(chainInfo.subgraph_exchange) : '0',
 
       // Variable: _derivedKswap
-      isActiveFarm ? getTokenPriceETH(chainInfo.subgraph_exchange, chainInfo.kswap) : '0',
+      isActiveFarm ? getTokenPriceKLC(chainInfo.subgraph_exchange, chainInfo.kswap) : '0',
 
       // Variable: pairValueUSD
       isActiveFarm ? getPairPriceUSD(chainInfo.subgraph_exchange, stakingTokenAddress) : '0',
@@ -127,10 +127,10 @@ export const aprChef: Handler = async (_, context) => {
       // Variable: rewarderAddress
       isActiveFarm ? getRewarder(chainInfo.rpc, chainInfo.mini_chef, poolId) : ZERO_ADDRESS,
 
-      // Variable: pglTotalSupply
+      // Variable: kslTotalSupply
       isActiveFarm ? getTotalSupply(chainInfo.rpc, stakingTokenAddress) : ZERO,
 
-      // Variable: pglStaked
+      // Variable: kslStaked
       isActiveFarm ? getBalance(chainInfo.rpc, stakingTokenAddress, chainInfo.mini_chef) : ZERO,
     ]);
 
@@ -150,11 +150,11 @@ export const aprChef: Handler = async (_, context) => {
 
   let stakedKSWAP = ZERO;
 
-  if (isActiveFarm && pglTotalSupply.gt(ZERO) && kswapPrice.gt(ZERO)) {
+  if (isActiveFarm && kslTotalSupply.gt(ZERO) && kswapPrice.gt(ZERO)) {
     const pairValueInKSWAP: BigNumber = convertStringToBigNumber(pairValueUSD, 0, 18)
       .mul(ONE_TOKEN)
       .div(kswapPrice);
-    stakedKSWAP = pairValueInKSWAP.mul(pglStaked).div(pglTotalSupply);
+    stakedKSWAP = pairValueInKSWAP.mul(kslStaked).div(kslTotalSupply);
   }
 
   const poolRewardPerSecInKSWAP: BigNumber = rewardPerSecond
@@ -210,10 +210,10 @@ export const aprChefMultiple: Handler = async (_, context) => {
   const [_klcPrice, _derivedKswap, lpTokens, poolInfos, rewardPerSecond, totalAllocPoints] =
     await Promise.all<string, string, string[], PoolInfo[], BigNumber, BigNumber>([
       // Variable: _klcPrice
-      getETHPrice(chainInfo.subgraph_exchange),
+      getKLCPrice(chainInfo.subgraph_exchange),
 
       // Variable: _derivedKswap
-      getTokenPriceETH(chainInfo.subgraph_exchange, chainInfo.kswap),
+      getTokenPriceKLC(chainInfo.subgraph_exchange, chainInfo.kswap),
 
       // Variable: _lpTokens
       getStakingTokenAddressesFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
@@ -247,7 +247,7 @@ export const aprChefMultiple: Handler = async (_, context) => {
     const stakingTokenAddress: string = lpTokens[pid];
     const farmAllocPoints: BigNumber = poolInfos[pid].allocPoint;
     const isActiveFarm: boolean = isActiveChef && farmAllocPoints.gt(ZERO);
-    const [{pairDayDatas}, pairValueUSD, rewarderAddress, pglTotalSupply, pglStaked] =
+    const [{pairDayDatas}, pairValueUSD, rewarderAddress, kslTotalSupply, kslStaked] =
       await Promise.all([
         // Variable: {pairDayDatas}
         gql.request(QUERIES.DAILY_VOLUME, chainInfo.subgraph_exchange, {
@@ -263,10 +263,10 @@ export const aprChefMultiple: Handler = async (_, context) => {
           ? getRewarder(chainInfo.rpc, chainInfo.mini_chef, pid.toString())
           : ZERO_ADDRESS,
 
-        // Variable: pglTotalSupply
+        // Variable: kslTotalSupply
         isActiveFarm ? getTotalSupply(chainInfo.rpc, stakingTokenAddress) : ZERO,
 
-        // Variable: pglStaked
+        // Variable: kslStaked
         isActiveFarm ? getBalance(chainInfo.rpc, stakingTokenAddress, chainInfo.mini_chef) : ZERO,
       ]);
 
@@ -283,11 +283,11 @@ export const aprChefMultiple: Handler = async (_, context) => {
 
     let stakedKSWAP = ZERO;
 
-    if (isActiveFarm && pglTotalSupply.gt(ZERO) && kswapPrice.gt(ZERO)) {
+    if (isActiveFarm && kslTotalSupply.gt(ZERO) && kswapPrice.gt(ZERO)) {
       const pairValueInKSWAP: BigNumber = convertStringToBigNumber(pairValueUSD, 0, 18)
         .mul(ONE_TOKEN)
         .div(kswapPrice);
-      stakedKSWAP = pairValueInKSWAP.mul(pglStaked).div(pglTotalSupply);
+      stakedKSWAP = pairValueInKSWAP.mul(kslStaked).div(kslTotalSupply);
     }
 
     const poolRewardPerSecInKSWAP: BigNumber = rewardPerSecond
@@ -360,9 +360,9 @@ async function getRewarderTokensPerSecondInKSWAP(
   const rewardInfos = await Promise.all<{decimals: BigNumber; price: BigNumber}>(
     rewardAddresses.map(async (address: string) => {
       try {
-        const {decimals, derivedETH} = await getTokenInfo(chainInfo.subgraph_exchange, address);
+        const {decimals, derivedKLC} = await getTokenInfo(chainInfo.subgraph_exchange, address);
         return {
-          price: convertStringToBigNumber(derivedETH, 0, 18).mul(klcPrice).div(kswapPrice),
+          price: convertStringToBigNumber(derivedKLC, 0, 18).mul(klcPrice).div(kswapPrice),
           decimals: BigNumber.from(decimals),
         };
       } catch {

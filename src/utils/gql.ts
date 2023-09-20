@@ -1,22 +1,22 @@
 import * as QUERIES from './queries';
 
-export async function getTokenPriceETH(url: string | undefined, address: string): Promise<string> {
+export async function getTokenPriceKLC(url: string | undefined, address: string): Promise<string> {
   const response = await request(QUERIES.TOKEN_PRICE, url, {
     address: address.toLowerCase(),
   });
-  return response.token.derivedETH;
+  return response.token.derivedKLC;
 }
 
 export async function getTokenInfo(
   url: string | undefined,
   address: string,
-): Promise<{decimals: string; derivedETH: string}> {
+): Promise<{decimals: string; derivedKLC: string}> {
   const response = await request(QUERIES.TOKEN_INFO, url, {
     address: address.toLowerCase(),
   });
   return {
     decimals: response.token.decimals,
-    derivedETH: response.token.derivedETH,
+    derivedKLC: response.token.derivedKLC,
   };
 }
 
@@ -27,9 +27,9 @@ export async function getPairPriceUSD(url: string | undefined, address: string):
   return response.pair.reserveUSD;
 }
 
-export async function getETHPrice(url: string | undefined): Promise<string> {
+export async function getKLCPrice(url: string | undefined): Promise<string> {
   const response = await request(QUERIES.KLC_PRICE, url);
-  return response.bundle.ethPrice;
+  return response.bundle.klcPrice;
 }
 
 export async function request(query: string, url: string | undefined, variables = {}) {
