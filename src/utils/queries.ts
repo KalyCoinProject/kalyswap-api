@@ -38,14 +38,14 @@ query swaps($first: Int, $skip: Int, $orderBy: String) {
 export const KLC_PRICE = `
 {
   bundle(id: 1) {
-    ethPrice
+    klcPrice
   }
 }`;
 
 export const TOKEN_PRICE = `
 query token($address: ID) {
   token(id: $address) {
-    derivedETH
+    derivedKLC
   }
 }`;
 
@@ -53,7 +53,7 @@ export const TOKEN_INFO = `
 query token($address: ID) {
   token(id: $address) {
     decimals
-    derivedETH
+    derivedKLC
   }
 }`;
 
