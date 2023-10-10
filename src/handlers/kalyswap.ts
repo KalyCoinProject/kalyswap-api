@@ -391,3 +391,6 @@ async function getRewarderTokensPerSecondInKSWAP(
 
   return extraRewardTokensPerSecondInKSWAP;
 }
+
+// Export getKLCPrice for use in other modules
+export { getKLCPrice };

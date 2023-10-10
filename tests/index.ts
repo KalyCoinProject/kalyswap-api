@@ -1,6 +1,17 @@
 import * as assert from 'uvu/assert';
 import {describe, get} from './setup/env';
 
+
+describe('/klc-price', (it) => {
+  it('/klc-price', async () => {
+    const {statusCode, data, headers} = await get('/kalyswap/klc-price');
+
+    assert.is(statusCode, 200);
+    assert.match(data, /^[.?\d]+/);
+    assert.is(headers['cache-control'], 'public,s-maxage=300');
+  });
+});
+
 describe('/', (it) => {
   it('/', async () => {
     const {statusCode, data, headers} = await get('/');

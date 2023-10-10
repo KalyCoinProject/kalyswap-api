@@ -35,6 +35,7 @@ API.add('GET', '/kalyswap/transaction-average', Kalyswap.average);
 API.add('GET', '/kalyswap/apr/:address', Kalyswap.aprLegacy);
 API.add('GET', '/kalyswap/apr2/:pid', Kalyswap.aprChef);
 API.add('GET', '/kalyswap/stakingTokenAddresses', Kalyswap.stakingTokenAddresses);
+API.add('GET', '/kalyswap/klc-price', Kalyswap.getKLCPrice); 
 
 // V2 API
 API.add('GET', '/v2/:chain/kswap/tvl', Kswap.tvl);
@@ -50,6 +51,7 @@ API.add('GET', '/v2/:chain/kalyswap/transaction-average', Kalyswap.average);
 API.add('GET', '/v2/:chain/kalyswap/apr/:pid', Kalyswap.aprChef);
 API.add('GET', '/v2/:chain/kalyswap/aprs/:pids', Kalyswap.aprChefMultiple);
 API.add('GET', '/v2/:chain/kalyswap/stakingTokenAddresses', Kalyswap.stakingTokenAddresses);
+API.add('GET', 'v2/:chain/kalyswap/klc-price', Kalyswap.getKLCPrice); 
 
 Cache.listen(async (event) => {
   return API.run(event.request, event);
