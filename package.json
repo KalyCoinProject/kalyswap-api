@@ -16,6 +16,7 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "@kalycoinproject/sdk": "2.2.2",
+    "ethers": "^6.8.0",
     "worktop": "0.8.0-next.5"
   },
   "devDependencies": {

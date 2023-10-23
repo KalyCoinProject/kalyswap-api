@@ -84,55 +84,53 @@ export const aprChef: Handler = async (_, context) => {
     poolId,
   );
 
-  // Number of days to average swap volume from
-  const days = 7;
+ // Number of days to average swap volume from
+const days = 7;
 
-  const [{pairDayDatas}, poolInfo, totalAllocPoints, rewardPerSecond] = await Promise.all<
-    any,
-    PoolInfo,
-    BigNumber,
-    BigNumber
-  >([
-    // Variable: {pairDayDatas}
-    gql.request(QUERIES.DAILY_VOLUME, chainInfo.subgraph_exchange, {
-      days,
-      pairAddress: stakingTokenAddress,
-    }),
+// Fetch pair day data
+const pairDayDataResponse = await gql.request(QUERIES.DAILY_VOLUME, chainInfo.subgraph_exchange, {
+  days,
+  pairAddress: stakingTokenAddress,
+});
+const pairDayDatas = pairDayDataResponse.pairDayDatas;
 
-    // Variable: poolInfo
-    getPoolInfoFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef, poolId),
+// Fetch pool info
+const poolInfo = await getPoolInfoFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef, poolId);
 
-    // Variable: totalAllocPoints
-    getTotalAllocationPointsFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
+// Fetch total allocation points
+const totalAllocPoints = await getTotalAllocationPointsFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef);
 
-    // Variable: rewardPerSecond
-    getRewardPerSecondFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
-  ]);
+// Fetch reward per second
+const rewardPerSecond = await getRewardPerSecondFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef);
+
 
   const farmAllocPoints: BigNumber = poolInfo.allocPoint;
   const isActiveChef: boolean = totalAllocPoints.gt(ZERO) && rewardPerSecond.gt(ZERO);
   const isActiveFarm: boolean = isActiveChef && farmAllocPoints.gt(ZERO);
 
   const [_klcPrice, _derivedKswap, pairValueUSD, rewarderAddress, kslTotalSupply, kslStaked] =
-    await Promise.all<string, string, string, string, BigNumber, BigNumber>([
+    await Promise.all([
       // Variable: _klcPrice
-      isActiveFarm ? getKLCPrice(chainInfo.subgraph_exchange) : '0',
+      isActiveFarm ? getKLCPrice(chainInfo.subgraph_exchange) : Promise.resolve('0') as Promise<string>,
 
       // Variable: _derivedKswap
-      isActiveFarm ? getTokenPriceKLC(chainInfo.subgraph_exchange, chainInfo.kswap) : '0',
+      isActiveFarm ? getTokenPriceKLC(chainInfo.subgraph_exchange, chainInfo.kswap) : Promise.resolve('0') as Promise<string>,
 
       // Variable: pairValueUSD
-      isActiveFarm ? getPairPriceUSD(chainInfo.subgraph_exchange, stakingTokenAddress) : '0',
+      isActiveFarm ? getPairPriceUSD(chainInfo.subgraph_exchange, stakingTokenAddress) : Promise.resolve('0') as Promise<string>,
 
       // Variable: rewarderAddress
-      isActiveFarm ? getRewarder(chainInfo.rpc, chainInfo.mini_chef, poolId) : ZERO_ADDRESS,
+      isActiveFarm ? getRewarder(chainInfo.rpc, chainInfo.mini_chef, poolId) : Promise.resolve(ZERO_ADDRESS) as Promise<string>,
 
       // Variable: kslTotalSupply
-      isActiveFarm ? getTotalSupply(chainInfo.rpc, stakingTokenAddress) : ZERO,
+      isActiveFarm ? getTotalSupply(chainInfo.rpc, stakingTokenAddress) : Promise.resolve(ZERO) as Promise<BigNumber>,
 
       // Variable: kslStaked
-      isActiveFarm ? getBalance(chainInfo.rpc, stakingTokenAddress, chainInfo.mini_chef) : ZERO,
+      isActiveFarm ? getBalance(chainInfo.rpc, stakingTokenAddress, chainInfo.mini_chef) : Promise.resolve(ZERO) as Promise<BigNumber>,
     ]);
+
+
+
 
   const klcPrice = convertStringToBigNumber(_klcPrice, 0, 18);
   const kswapPrice = convertStringToBigNumber(_derivedKswap, 0, 18).mul(klcPrice).div(ONE_TOKEN);
@@ -207,26 +205,27 @@ export const aprChefMultiple: Handler = async (_, context) => {
   const days = 7;
 
   // Singular data
-  const [_klcPrice, _derivedKswap, lpTokens, poolInfos, rewardPerSecond, totalAllocPoints] =
-    await Promise.all<string, string, string[], PoolInfo[], BigNumber, BigNumber>([
-      // Variable: _klcPrice
-      getKLCPrice(chainInfo.subgraph_exchange),
+const [_klcPrice, _derivedKswap, lpTokens, poolInfos, rewardPerSecond, totalAllocPoints] =
+await Promise.all([
+  // Variable: _klcPrice
+  getKLCPrice(chainInfo.subgraph_exchange) as Promise<string>,
 
-      // Variable: _derivedKswap
-      getTokenPriceKLC(chainInfo.subgraph_exchange, chainInfo.kswap),
+  // Variable: _derivedKswap
+  getTokenPriceKLC(chainInfo.subgraph_exchange, chainInfo.kswap) as Promise<string>,
 
-      // Variable: _lpTokens
-      getStakingTokenAddressesFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
+  // Variable: _lpTokens
+  getStakingTokenAddressesFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef) as Promise<string[]>,
 
-      // Variable: poolInfos
-      getPoolInfosFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
+  // Variable: poolInfos
+  getPoolInfosFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef) as Promise<PoolInfo[]>,
 
-      // Variable: rewardPerSecond
-      getRewardPerSecondFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
+  // Variable: rewardPerSecond
+  getRewardPerSecondFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef) as Promise<BigNumber>,
 
-      // Variable: totalAllocPoints
-      getTotalAllocationPointsFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef),
-    ]);
+  // Variable: totalAllocPoints
+  getTotalAllocationPointsFromMiniChefV2(chainInfo.rpc, chainInfo.mini_chef) as Promise<BigNumber>,
+]);
+
 
   // Format singular data
   const klcPrice: BigNumber = convertStringToBigNumber(_klcPrice, 0, 18);
@@ -352,10 +351,10 @@ async function getRewarderTokensPerSecondInKSWAP(
   // No rewarder means no extra rewards
   if (rewarderAddress === ZERO_ADDRESS) return ZERO;
 
-  const [rewardAddresses, rewardMultipliers] = await Promise.all<string[], BigNumber[]>([
-    getRewarderViaMultiplierRewardTokens(chainInfo.rpc, rewarderAddress),
-    getRewarderViaMultiplierRewardMultipliers(chainInfo.rpc, rewarderAddress),
-  ]);
+  const [rewardAddresses, rewardMultipliers] = await Promise.all([
+    getRewarderViaMultiplierRewardTokens(chainInfo.rpc, rewarderAddress) as Promise<string[]>,
+    getRewarderViaMultiplierRewardMultipliers(chainInfo.rpc, rewarderAddress) as Promise<BigNumber[]>,
+]);
 
   const rewardInfos = await Promise.all<{decimals: BigNumber; price: BigNumber}>(
     rewardAddresses.map(async (address: string) => {
