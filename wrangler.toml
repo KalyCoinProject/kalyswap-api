@@ -15,3 +15,7 @@ command = "yarn run build"
 
 [build.upload]
 format = "service-worker"
+
+[vars]
+APP_ID = "" 
+SECRET_KEY = "" 
